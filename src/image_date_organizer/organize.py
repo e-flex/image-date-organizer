@@ -131,19 +131,28 @@ class Organizer:
     ) -> None:
         """Organize a single file."""
         logger.debug(f"Organizing {source}")
-        date = self.extract_date(source)
-
-        if date is None:
+        sourceDate = self.extract_date(source)
+        logger.debug(sourceDate)
+        if sourceDate is None:
+            logger.info(f"{source} behaves weirdly, no date extracted.")
             return
 
-        dest_dir = create_date_path(destination, date)
+        logger.debug(sourceDate)
 
+        dest_dir = create_date_path(destination, sourceDate)
         dest_path = dest_dir / source.name
         logger.debug(f"Determined destination path as {dest_path}")
         dest_dir.mkdir(parents=True, exist_ok=True)  # ensure dir exists
         if dest_path.exists():
-            logger.warning(f"{source.name} already exists on destination, skipping")
-            return  # skipping, since it already exists.
+            logger.warning(f"{source.name} already exists on destination.")
+            destDate = self.extract_date()
+            logger.debug(destDate)
+            if sourceDate == destDate:
+                logger.info(f"{source} and {dest_path} have the same date, {destDate}.")
+                if self.remove_source and source.is_file():
+                    logger.info(f"Removing {source}")
+                    source.unlink()
+            return
         logger.info(f"Copying {source} to {dest_path}")
 
         # Return early if we are doing a dry run.
@@ -191,11 +200,13 @@ class Organizer:
 
 def is_image(path: Path) -> bool:
     mimetype = magic.from_file(str(path), mime=True)
+    logger.debug(mimetype)
     return mimetype.split("/")[0] == "image"
 
 
 def is_mp4(path: Path) -> bool:
     mimetype = magic.from_file(str(path), mime=True)
+    logger.debug(mimetype)
     return mimetype == "video/mp4"
 
 

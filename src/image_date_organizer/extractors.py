@@ -50,12 +50,15 @@ class ExifImageExtractor(Extractor):
     def extract(self, path: pathlib.Path) -> Optional[datetime.date]:
         image = Image.open(path)
         date: Optional[datetime.date] = None
-        if "exif" in image.info:
-            exif_data = image._getexif()
-            if EXIF_DATE_FIELD in exif_data:
-                date = cast(
-                    pendulum.DateTime, pendulum.parse(exif_data[EXIF_DATE_FIELD])
-                ).date()
+        try:
+            exif_data = image.getexif()
+        except Exception as e:
+            logger.warning(e)
+        logger.debug(EXIF_DATE_FIELD)
+        if EXIF_DATE_FIELD in exif_data:
+            date = cast(
+                pendulum.DateTime, pendulum.parse(exif_data[EXIF_DATE_FIELD])
+            )
         return date
 
 
